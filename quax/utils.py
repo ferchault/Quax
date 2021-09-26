@@ -1,23 +1,25 @@
 import numpy as np
 import itertools
 
-def how_many_derivs(k,n):
+
+def how_many_derivs(k, n):
     """How many unique Cartesian derivatives for k atoms at nth order"""
     val = 1
     fact = 1
     for i in range(n):
         val *= 3 * k + i
-        fact *= i + 1;
+        fact *= i + 1
     val /= fact
     return int(val)
 
+
 def get_deriv_vec_idx(deriv_vec):
     """
-    Used to lookup appropriate slice of disk-saved integral derivative tensor 
+    Used to lookup appropriate slice of disk-saved integral derivative tensor
     which corresponds to a particular derivative vector.
-    Given a derivative vector of shape NCART, 
-    find the flattened generalized upper triangle index of 
-    the cartesian derivative tensor. 
+    Given a derivative vector of shape NCART,
+    find the flattened generalized upper triangle index of
+    the cartesian derivative tensor.
     """
     dim = deriv_vec.shape[0]
     vals = np.arange(dim, dtype=int)
@@ -31,8 +33,9 @@ def get_deriv_vec_idx(deriv_vec):
         deriv_vecs.append(tmp_deriv_vec)
 
     deriv_vecs = np.asarray(deriv_vecs)
-    idx = np.argwhere(np.all(deriv_vecs==deriv_vec,axis=1)).reshape(-1)[0]
+    idx = np.argwhere(np.all(deriv_vecs == deriv_vec, axis=1)).reshape(-1)[0]
     return idx
+
 
 # Sum over all partitions of the set range(deriv_order)
 def partition(collection):
@@ -43,9 +46,10 @@ def partition(collection):
     for smaller in partition(collection[1:]):
         # insert `first` in each of the subpartition's subsets
         for n, subset in enumerate(smaller):
-            yield smaller[:n] + [[ first ] + subset]  + smaller[n+1:]
-        # put `first` in its own subset 
+            yield smaller[:n] + [[first] + subset] + smaller[n + 1 :]
+        # put `first` in its own subset
         yield [[first]] + smaller
+
 
 def get_required_deriv_vecs(natoms, deriv_order, address):
     """
@@ -79,11 +83,9 @@ def get_required_deriv_vecs(natoms, deriv_order, address):
     for p in partition(address):
         for sub in p:
             # List of zeros
-            deriv_vec = [0] * nparams 
+            deriv_vec = [0] * nparams
             for i in sub:
                 deriv_vec[i] += 1
             deriv_vecs.append(deriv_vec)
     partial_derivatives = np.unique(np.asarray(deriv_vecs), axis=0)
-    return partial_derivatives 
-
-
+    return partial_derivatives
