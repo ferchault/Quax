@@ -3,6 +3,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 from jax import jacfwd
+from jax.experimental import host_callback
 import numpy as np
 import h5py
 import psi4
@@ -32,6 +33,7 @@ def compute_integrals(
 
     if libint_imported and libint_interface.LIBINT2_MAX_DERIV_ORDER >= deriv_order:
         if algo == "libint_core":
+            host_callback.id_print(charge, what="libint_core")
             libint_interface.initialize(xyz_path, basis_name)
             # Precompute TEI derivatives
             tei_obj = TEI(basis_name, xyz_path, deriv_order, "core")
@@ -55,6 +57,7 @@ def compute_integrals(
             return S, T, V, G
 
         elif algo == "libint_disk" and deriv_order > 0:
+            host_callback.id_print(charge, what="libint_disk")
             # Check disk for currently existing integral derivatives
             check = check_disk(geom, basis_name, xyz_path, deriv_order)
 
@@ -109,6 +112,7 @@ def compute_integrals(
         # elif algo == 'quax_disk':
 
         elif algo == "quax_core":
+            host_callback.id_print(charge, what="qcore")
             with open(xyz_path, "r") as f:
                 tmp = f.read()
             molecule = psi4.core.Molecule.from_string(tmp, "xyz+")
@@ -118,6 +122,7 @@ def compute_integrals(
 
     # If Libint not imported or Libint version doesnt support requested deriv order, use Quax integrals
     else:
+        host_callback.id_print(charge, what="qcore")
         with open(xyz_path, "r") as f:
             tmp = f.read()
         molecule = psi4.core.Molecule.from_string(tmp, "xyz+")

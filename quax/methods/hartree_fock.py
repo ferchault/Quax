@@ -2,6 +2,7 @@ import jax
 
 jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
+from jax.experimental import host_callback
 import numpy as np
 import psi4
 
@@ -16,6 +17,7 @@ def restricted_hartree_fock(
     nuclear_charges,
     charge,
     options,
+    dmguess,
     deriv_order=0,
     return_aux_data=False,
 ):
@@ -49,10 +51,12 @@ def restricted_hartree_fock(
             in_axes=(0, None),
         )
 
+    host_callback.id_print(maxit, what="do integrals")
     S, T, V, G = compute_integrals(
         geom, basis_name, xyz_path, nuclear_charges, charge, deriv_order, options
     )
     # Canonical orthogonalization via cholesky decomposition
+    host_callback.id_print(maxit, what="cholesky")
     A = cholesky_orthogonalization(S)
 
     nbf = S.shape[0]
@@ -67,12 +71,14 @@ def restricted_hartree_fock(
     else:
         shift = jnp.zeros_like(S)
 
+    host_callback.id_print(maxit, what="hamiltonian")
     H = T + V
     Enuc = nuclear_repulsion(geom.reshape(-1, 3), nuclear_charges)
-    D = jnp.zeros_like(H)
+    host_callback.id_print(dmguess, what="dmguess")
+    D = jnp.array(dmguess)
 
     def rhf_iter(F, D):
-        E_scf = jnp.einsum("pq,pq->", F + H, D) + Enuc
+        E_scf = jnp.einsum("pq,pq->", F + H, D) #+ Enuc
         Fp = jnp.dot(A.T, jnp.dot(F, A))
         Fp = Fp + shift
         eps, C2 = jnp.linalg.eigh(Fp)
@@ -84,12 +90,13 @@ def restricted_hartree_fock(
     iteration = 0
     E_scf = 1.0
     E_old = 0.0
-    Dold = jnp.zeros_like(D)
+    Dold = D
     dRMS = 1.0
 
     # Converge according to energy and DIIS residual to ensure eigenvalues and eigenvectors are maximally converged.
     # This is crucial for numerical stability for higher order derivatives of correlated methods.
     while (abs(E_scf - E_old) > convergence) or (dRMS > convergence):
+        host_callback.id_print(D, what="dm current")
         E_old = E_scf * 1
         if damping:
             if iteration < 10:
@@ -108,6 +115,7 @@ def restricted_hartree_fock(
             diis_e = A.dot(diis_e).dot(A)
             dRMS = jnp.mean(diis_e ** 2) ** 0.5
         # Compute energy, transform Fock and diagonalize, get new density
+        host_callback.id_print(iteration, what="iter")
         E_scf, D, C, eps = rhf_iter(F, D)
         iteration += 1
         if iteration == maxit:
