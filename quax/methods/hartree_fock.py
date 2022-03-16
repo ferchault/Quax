@@ -17,7 +17,7 @@ def restricted_hartree_fock(
     nuclear_charges,
     charge,
     options,
-    dmguess,
+    dmguess=None,
     deriv_order=0,
     return_aux_data=False,
 ):
@@ -74,8 +74,12 @@ def restricted_hartree_fock(
     host_callback.id_print(maxit, what="hamiltonian")
     H = T + V
     Enuc = nuclear_repulsion(geom.reshape(-1, 3), nuclear_charges)
-    host_callback.id_print(dmguess, what="dmguess")
-    D = jnp.array(dmguess)
+    #host_callback.id_print(dmguess, what="dmguess")
+    if dmguess is None:
+        D = jnp.zeros_like(H)
+    else:
+        D = jnp.array(dmguess)
+    
 
     def rhf_iter(F, D):
         E_scf = jnp.einsum("pq,pq->", F + H, D) #+ Enuc
