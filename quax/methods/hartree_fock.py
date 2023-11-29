@@ -17,9 +17,9 @@ def restricted_hartree_fock(
     nuclear_charges,
     charge,
     options,
-    dmguess=None,
     deriv_order=0,
     return_aux_data=False,
+    dmguess=None,
 ):
     # Load keyword options
     maxit = options["maxit"]

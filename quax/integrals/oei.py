@@ -121,7 +121,7 @@ def A_array(l1, l2, PA, PB, CP, g, A_vals):
                         * (0.25 / g) ** (s.r + s.u)
                         * fact_ratio
                     )
-                    s.A = jax.ops.index_add(s.A, I, Aterm)
+                    s.A.at[I].add(Aterm)
                     s.u -= 1
                 s.r -= 1
             s.i -= 1
@@ -294,11 +294,7 @@ def oei_arrays(geom, basis, charges):
                         )
                         * coef
                     )
-                    s.oei = jax.ops.index_add(
-                        s.oei,
-                        ([0, 1, 2], [i, i, i], [j, j, j]),
-                        (overlap_int, kinetic_int, potential_int),
-                    )
+                    s.oei.at[([0, 1, 2], [i, i, i], [j, j, j])].add((overlap_int, kinetic_int, potential_int))
 
                     s.b += 1
                 s.a += 1

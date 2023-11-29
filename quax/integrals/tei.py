@@ -69,7 +69,7 @@ def B_array(
                             Bterm *= fact_ratio2[tmp, s.u]
                             Bterm *= qp_pow[tmp - 2 * s.u]
                             Bterm *= oodelta_pow[I]
-                            s.B = jax.ops.index_add(s.B, I, Bterm)
+                            s.B.at[I].add(Bterm)
                             s.u -= 1
                         s.r2 -= 1
                     s.i2 -= 1
@@ -375,7 +375,7 @@ def tei_array(geom, basis):
                                         S.J += 1
                                     S.I += 1
                             tei = prefactor * S.primitive
-                            s.G = jax.ops.index_add(s.G, jax.ops.index[i, j, k, l], tei)
+                            s.G.at[(i, j, k, l)].add(tei)
 
                             s.d += 1
                         s.c += 1
